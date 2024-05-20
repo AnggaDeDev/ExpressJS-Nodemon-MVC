@@ -2,7 +2,7 @@
     "name": "black-market",
     "private": true,
     "scripts": {
-        "start": "node  resources/servers/dashboard_server.js",
+        "start": "nodemon servers/dashboard_server.js",
         "dev": "nodemon server.js"
     },
     "dependencies": {

@@ -1,4 +1,4 @@
-const mahasiswaModel = require('../models/mahasiswa');
+const mahasiswaModel = require('../models/students_model.js');
 
 async function addMahasiswa(req, res) {
   const { nim, nama, prodi } = req.body;
@@ -58,5 +58,7 @@ async function uploadFile(req, res) {
   // Handle the file (e.g., store file information in the database)
   res.status(200).json({ message: 'File uploaded successfully', file: req.file });
 }
+
+
 
 module.exports = { addMahasiswa, getAllMahasiswa, editMahasiswa, removeMahasiswa, uploadFile };

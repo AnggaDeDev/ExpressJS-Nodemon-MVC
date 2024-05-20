@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../dbcons/dbcon_mysql2.js');
 
 async function insertMahasiswa(nim, nama, prodi) {
   try {
