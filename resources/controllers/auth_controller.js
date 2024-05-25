@@ -1,66 +1,75 @@
 
-async function register(app,pool){
-app.post('/register', upload.none(), async (req, res) => {
-      try {
-        const { username, password } = req.body;
-        console.log('Request Body:', req.body); 
-        if (!username || !password) {
-          return res.status(400).send('Username and password are required');
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const query = 'INSERT INTO users (username, password) VALUES (?, ?)';
-        pool.query(query, [username, hashedPassword], (err, results) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).send('Error registering user');
-          }
-          res.status(201).send('User registered');
-        });
-      } catch (error) {
-        console.error('Register Error:', error);
-        res.status(500).send('Server error');
-      }
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const db = require('../dbcons/dbcon_mysql2');
+
+const JWT_SECRET = 'undira';
+
+async function register (req, res){
+ const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db('users').insert({
+      name,
+      email,
+      password: hashedPassword,
     });
+
+    const user = await db('users').where({ name }).first();
+    const token = jwt.sign({ id: user.id, name: user.name, roles: user.roles }, JWT_SECRET, { expiresIn: '1h' });
+
+    res.cookie('token', token, { httpOnly: true, secure: false }); // Set 'secure: true' in production
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error registering user' });
+  }
+};
+
+async function login(req, res){
+    const { name, password } = req.body;
+    if (!name || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+  
+    try {
+      const user = await db('users').where({ name }).first();
+      if (!user) {
+        return res.status(401).json({ error: 'Nama tidak ditemukan' });
+      }
+  
+      const validPassword = await bcrypt.compare(password, user.password);
+  
+      if (!validPassword) {
+        return res.status(401).json({ error: 'Password salah' });
+      }
+  
+      const token = jwt.sign({ id: user.id, name: user.name, roles: user.role }, JWT_SECRET, { expiresIn: '1h' });
+  
+      res.cookie('token', token, { httpOnly: true, secure: false }); // Set 'secure: true' in production
+      res.json({ message: 'Login successful' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error logging in user' });
+    }
 }
 
-// Login route
-async function login(app,bcrypt,pool){
-
-// Handle login with multipart form data
-app.post('/login', upload.none(), async (req, res) => {
-      try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-          console.log('Missing username or password');
-          return res.status(400).send('Username and password are required');
-        }
-        return res.status(400).send('Temporary debug message'); // Temporary debug message
-    
-        const query = 'SELECT * FROM users WHERE username = ?';
-        pool.query(query, [username], async (err, results) => {
-          console.log('Query executed');
-          if (err) {
-            console.error(err);
-            return res.status(500).send('Error logging in');
-          }
-          if (results.length === 0) {
-            return res.status(400).send('User not found');
-          }
-    
-          const user = results[0];
-          const isPasswordValid = await bcrypt.compare(password, user.password);
-          if (!isPasswordValid) {
-            return res.status(400).send('Invalid password');
-          }
-    
-          const token = jwt.sign({ username }, 'secret_key', { expiresIn: '1h' });
-          res.status(200).json({ token });
-        });
-      } catch (error) {
-        console.error('Login Error:', error);
-        res.status(500).send('Server error');
-      }
-    });
-      
+async function logout(req,res){
+    try {
+        /*
+        const token = req.cookies.token;
+        await db('tokens').where({ token }).del();
+        */
+       console.log(req.cookies.token);
+        res.clearCookie('token');
+        res.json({ message: 'Logout successful' });
+      } catch (error) {
+        res.status(500).json({ error: 'Error logging out' });
+      }
 }
-module.exports = { register,login }
+
+module.exports = {register, login, logout};
