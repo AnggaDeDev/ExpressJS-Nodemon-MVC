@@ -1,4 +1,4 @@
-## API Artikel CRUD yang dilengkapi dengan authentikasi & authorisasi dengan EXPRESS.JS 
+## API Artikel CRUD yang dilengkapi dengan authentikasi & authorisasi dengan Express.js 
 ---
 Applikasi yang didesain secara khusus dan professional yang berkualitas high-end reusable, maintainable, scalable, & reliable code.
 
